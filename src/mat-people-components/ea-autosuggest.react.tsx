@@ -3,30 +3,8 @@ import PropTypes, { InferProps } from 'prop-types';
 import Autosuggest from 'react-autosuggest';
 import axios from 'axios';
 import { debounce } from 'throttle-debounce';
-
-// JS community try to avoid using bind. It's considered as an anti-pattern in the typescript world
-
-function dictToList(categories: { [id: string]: any }) {
-  // console.log("categories", categories)
-  return Object.keys(categories).reduce((acc: { title: string; suggestions }[], catKey: string) => {
-    return [...acc, { title: catKey, suggestions: categories[catKey] }];
-  }, []);
-  /*
-    const sections = [];
-  for (const key in categories) {
-    if (categories.hasOwnProperty(key)) {
-      sections.push({"title": key, "suggestions": categories[key]});
-    }
-  }*/
-}
-
-function groupBy(objectArray: any[], property: string) {
-  return objectArray.reduce((acc, obj) => {
-    const key = obj[property];
-    acc[key] ? (acc[key] = []) : acc[key].push(obj);
-    return acc;
-  }, {});
-}
+import './styles.less';
+import { dictToList, fetchSuggestions, groupBy } from './utils'; // to discuss
 
 /**
  * ESAutosuggest is a composition with Reach Autosuggest (RA),
@@ -123,7 +101,6 @@ export default class Autocomplete extends Component<
     this.setState({ value: newValue });
   }
 
-
   // i would extract this method in a dedicated file, that way it can be mocked for testing with jest
   // you can use await/async to make it look synchronous, or use RxJS
 
@@ -131,47 +108,19 @@ export default class Autocomplete extends Component<
    * This contains the logic for how suggestions should be generated. In this case, it's ElasticSearch (via axios).
    */
   onSuggestionsFetchRequested({ value }) {
-    const config = { auth: { username: this.props.authUser, password: this.props.authPass } };
-    const searchterm = value.includes(', ')
+    const authConfig = { auth: { username: this.props.authUser, password: this.props.authPass } };
+    const searchTerm = value.includes(', ')
       ? value.substring(value.lastIndexOf(', ') + 2, value.length)
       : value;
 
-    // fetch is sufficient
-    axios
-      .post(
-        this.props.endpoint,
-        {
-          query: {
-            match: {
-              [this.props.searchField]: searchterm
-            }
-            // multi_match: {
-            //   query: value,
-            //   fields: this.props.fields
-            // }
-          },
-          sort: this.props.sort,
-          size: this.props.numSuggestions
-        },
-        config
-      )
-      .then(
-        res => {
-          // const results = res.data.hits.hits.map(h => h._source);
-          const results = res.data.hits.hits; // this can potentially fail
-          console.log(dictToList(groupBy(results, '_index')));
-          // this.setState({suggestions: [{"title": "Properties", "suggestions": results}]})
-          // this check is sufficient
-          if (results && results.length > 0) {
-            const suggestions = dictToList(groupBy(results, '_index'));
-            this.setState({ suggestions: suggestions });
-          }
-        },
-        () => {
-          // what do we do in case of error
-          // either use error boundaries, or present an error message
-        }
-      );
+    fetchSuggestions(
+      this.props.endpoint,
+      searchTerm,
+      this.props.sort,
+      this.props.numSuggestions,
+      this.props.searchField,
+      authConfig
+    ).then(suggestions => this.setState({ suggestions }));
   }
 
   onSuggestionsClearRequested() {
