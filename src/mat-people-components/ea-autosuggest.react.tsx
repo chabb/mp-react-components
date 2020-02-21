@@ -1,10 +1,9 @@
 import React, { Component } from 'react';
 import PropTypes, { InferProps } from 'prop-types';
 import Autosuggest from 'react-autosuggest';
-import axios from 'axios';
 import { debounce } from 'throttle-debounce';
 import './styles.less';
-import { dictToList, fetchSuggestions, groupBy } from './utils'; // to discuss
+import { fetchSuggestions } from './utils'; // to discuss
 
 /**
  * ESAutosuggest is a composition with Reach Autosuggest (RA),
@@ -18,7 +17,6 @@ export default class Autocomplete extends Component<
 > {
   constructor(public props: any) {
     super(props);
-
     // one of those two is not needed
     this.state = { value: '', suggestions: [] };
     this.setState({ value: '', suggestions: [] });
@@ -62,11 +60,11 @@ export default class Autocomplete extends Component<
     }
   }
 
-  onSuggestionSelected(event, { suggestion, suggestionValue, method }) {
+  onSuggestionSelected(event, { suggestion: lastValueMeta, suggestionValue: value, method }) {
     if (method === 'enter' || method === 'click') {
       const payload = {
-        value: suggestionValue,
-        lastValueMeta: suggestion
+        value,
+        lastValueMeta
       };
       // ^ not sure to understand this part ^^
       this.props.setProps(payload);
@@ -97,8 +95,8 @@ export default class Autocomplete extends Component<
     return <strong>{title}</strong>;
   }
 
-  onChange(event, { newValue }) {
-    this.setState({ value: newValue });
+  onChange(event, { newValue: value }) {
+    this.setState({ value });
   }
 
   // i would extract this method in a dedicated file, that way it can be mocked for testing with jest
@@ -143,15 +141,15 @@ export default class Autocomplete extends Component<
     // i thinks something is a bit weird here, we are passing the same method in multiple places
     // this.onKeyPress,. and by looking at the source code of autosuggest, it's onKeyDown
     const inputProps = {
-      placeholder: placeholder,
+      placeholder,
       value,
       onChange: (event, nw) => this.onChange(event, nw),
       onKeyPress: ev => this.onKeyPress(ev), // i guess it's onKeyDown ?
       onSuggestionSelected: (ev, sugg) => this.onSuggestionSelected(ev, sugg),
       autoComplete: 'off',
-      autoFocus: autoFocus,
-      style: style,
-      spellCheck: spellCheck
+      autoFocus,
+      style,
+      spellCheck
     };
 
     return (
