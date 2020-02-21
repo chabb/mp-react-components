@@ -9,6 +9,25 @@ import { InsetHelper, ScenePosition } from '../scene/inset-helper';
 import { getSceneWithBackground, ThreeBuilder } from './three_builder';
 import { DebugHelper } from '../scene/debug-helper';
 
+const vertexShader = require('./vertex_shader.glsl');
+const fragmentShader = require('./fragment_shader.glsl');
+
+console.log(vertexShader, fragmentShader);
+
+const customMaterial = new THREE.ShaderMaterial({
+  uniforms: {
+    c: { type: 'f', value: 1.0 },
+    p: { type: 'f', value: 1.4 },
+    glowColor: { type: 'c', value: new THREE.Color(0xffff00) },
+    viewVector: { type: 'v3', value: [0, 0, 0] }
+  },
+  vertexShader: vertexShader,
+  fragmentShader: fragmentShader,
+  side: THREE.FrontSide,
+  blending: THREE.AdditiveBlending,
+  transparent: true
+});
+
 export default class Simple3DScene {
   private settings;
   private renderer!: THREE.WebGLRenderer | SVGRenderer;
