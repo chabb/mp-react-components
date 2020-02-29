@@ -44,10 +44,12 @@ export class DebugHelper {
     if (!mountNode) {
       console.error('No mount node passed for the debug view');
     }
-    this.debugRenderer = new THREE.WebGLRenderer({
-      antialias: true,
-      alpha: true
-    });
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('webgl2', { alpha: true });
+    console.log(context, canvas);
+    const renderer = new THREE.WebGLRenderer({ canvas: canvas as any, context: context as any });
+
+    this.debugRenderer = renderer;
     (this.debugRenderer as any).gammaFactor = 2.2;
     this.debugRenderer.setSize(DEBUG_SIZE, DEBUG_SIZE);
 
@@ -72,7 +74,7 @@ export class DebugHelper {
     this.showLights && this.scene.add(this.lights);
 
     this.debugCamera = new THREE.PerspectiveCamera(
-      60, // fov
+      90, // fov
       1, // aspect
       0.1, // near
       300 // far

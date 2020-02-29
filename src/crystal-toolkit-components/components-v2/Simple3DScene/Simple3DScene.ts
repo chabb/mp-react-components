@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Matrix4, Object3D, Quaternion, Vector3, WebGLRenderer } from 'three';
+import { Matrix4, Object3D, Quaternion, Vector3, WebGLRenderer, Wrapping } from 'three';
 import { CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer';
 import { SVGRenderer } from 'three/examples/jsm/renderers/SVGRenderer';
 import { defaults, Renderer } from './constants';
@@ -15,7 +15,10 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass';
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 // @ts-ignore
-import img from './glass.png'; // texture for selected elements
+import img from './glass.png';
+// @ts-ignore
+import viridis from './vir.png';
+import { VolumeRenderShader1 } from 'three/examples/jsm/shaders/VolumeShader'; // texture for selected elements
 
 // note that it uses substractive blending, so colors are actually inverted
 const OUTLINE_COLOR = new THREE.Color('#FFFFFF');
@@ -57,11 +60,18 @@ export default class Simple3DScene {
   private determineSceneRenderer() {
     switch (this.settings.renderer) {
       case Renderer.WEBGL: {
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('webgl2', { alpha: true });
+        console.log(context, canvas);
         const renderer = new THREE.WebGLRenderer({
+          canvas: canvas as any,
+          context: context as any
+        });
+        /*const renderer = new THREE.WebGLRenderer({
           antialias: this.settings.antialias,
           alpha: this.settings.transparentBackground
-        });
-        renderer.gammaFactor = 2.2;
+        });*/
+        console.log(renderer);
         return renderer;
       }
       case Renderer.SVG: {
@@ -99,6 +109,7 @@ export default class Simple3DScene {
 
   private configureScene(sceneJson) {
     this.scene = getSceneWithBackground(this.settings);
+
     this.addToScene(sceneJson);
     const lights = this.objectBuilder.makeLights(this.settings.lights);
     this.scene.add(lights);
@@ -108,6 +119,10 @@ export default class Simple3DScene {
     controls.zoomSpeed = 1.2;
     controls.panSpeed = 0.8;
     controls.enabled = true;
+    const a = this.scene.getObjectByName('_ct_StructureMoleculeComponent_1');
+    console.log(a);
+    this.scene.remove(a as any);
+
     this.renderer.domElement.addEventListener('mousemove', (e: any) => {
       if (this.renderer instanceof WebGLRenderer) {
         // tooltips
@@ -313,7 +328,7 @@ export default class Simple3DScene {
             translation.makeTranslation(...(childObject.origin as [number, number, number]));
             threeObject.applyMatrix4(translation);
           }
-          if (!this.settings.extractAxis || threeObject.name !== 'axes') {
+          if (threeObject.name !== 'axes') {
             parent.add(threeObject);
           }
           traverse_scene(childObject, threeObject);
@@ -323,6 +338,67 @@ export default class Simple3DScene {
           }
         }
       });
+
+      const size = 6;
+      const textureArray = new Float32Array(size * size * size);
+      const step = 1 / (size * 2 * 2);
+
+      let idx = 0;
+      for (let x = 0; x < size; x++) {
+        for (let y = 0; y < size; y++) {
+          for (let z = 0; z < size; z++) {
+            idx++;
+            textureArray[x + y * size + z * size * size] = step * idx;
+            if (idx > size * 2 * 2) idx = 0;
+          }
+        }
+      }
+
+      const texture = new THREE.DataTexture3D(textureArray, size, size, size);
+      texture.format = THREE.RedFormat;
+      texture.type = THREE.FloatType;
+      texture.wrapS = THREE.ClampToEdgeWrapping;
+      texture.wrapT = THREE.ClampToEdgeWrapping;
+
+      texture.minFilter = texture.magFilter = THREE.LinearFilter;
+      texture.unpackAlignment = 1;
+
+      const shader = VolumeRenderShader1;
+
+      const uniforms = THREE.UniformsUtils.clone(shader.uniforms);
+
+      // Colormap textures
+      const cmtextures = {
+        viridis: new THREE.TextureLoader().load(viridis, () => {
+          console.log('loaded');
+        })
+      };
+
+      uniforms['u_data'].value = texture;
+      uniforms['u_size'].value.set(size, size, size);
+      uniforms['u_clim'].value.set(0, 1);
+      uniforms['u_renderstyle'].value = 0; // 0: MIP, 1: ISO
+      uniforms['u_renderthreshold'].value = 1; // For ISO renderstyle
+      uniforms['u_cmdata'].value = cmtextures.viridis;
+
+      // this gets clipped for some reason
+      const material = new THREE.ShaderMaterial({
+        uniforms: uniforms,
+        vertexShader: shader.vertexShader,
+        fragmentShader: shader.fragmentShader,
+        clipping: false,
+        side: THREE.DoubleSide // The volume shader uses the backface as its "reference point"
+      });
+
+      const material2 = new THREE.MeshBasicMaterial();
+      material2.color = new THREE.Color('#ff1111');
+      // THREE.Mesh
+      const geometry = new THREE.BoxGeometry(size, size, size);
+      // geometry.translate(0, 0, 0);
+      geometry.translate(size / 2, size / 2, size / 2);
+
+      const mesh = new THREE.Mesh(geometry, material);
+      this.scene.add(mesh);
     };
 
     traverse_scene(sceneJson, rootObject);
@@ -364,10 +440,10 @@ export default class Simple3DScene {
     box.getSize(size);
 
     let maxDim = Math.max(size.x, size.y, size.z);
-    const CAMERA_BOX_PADDING = maxDim / 1.65;
+    const CAMERA_BOX_PADDING = maxDim * 1.65;
     // we add a bit of padding, let's suppose we rotate, we want to avoid the
     // object to go out of the camera
-    const maxExtent = maxDim / 2 + CAMERA_BOX_PADDING / 2;
+    const maxExtent = maxDim + CAMERA_BOX_PADDING;
     // we add a lot of padding to make sure the camera is always beyond/behind the object
     const Z_PADDING = 50;
     this.camera = new THREE.OrthographicCamera(
