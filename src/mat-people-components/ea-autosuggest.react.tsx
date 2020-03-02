@@ -119,7 +119,12 @@ export default class Autocomplete extends Component<
       this.props.numSuggestions,
       this.props.searchField,
       authConfig
-    ).then(suggestions => this.setState({ suggestions }));
+    ).then(
+      suggestions => this.setState({ suggestions, error: false }),
+      () => {
+        this.setState({ error: true });
+      }
+    );
   }
 
   onSuggestionsClearRequested() {
@@ -137,8 +142,11 @@ export default class Autocomplete extends Component<
 
   render() {
     const { suggestions, value } = this.state;
-    const { placeholder, autoFocus, style, spellCheck } = this.props;
-
+    const { placeholder, autoFocus, spellCheck } = this.props;
+    let { style } = this.props;
+    if (this.state.error) {
+      style = { ...style, border: '1px solid red' };
+    }
     // i thinks something is a bit weird here, we are passing the same method in multiple places
     // this.onKeyPress,. and by looking at the source code of autosuggest, it's onKeyDown
     const inputProps = {
@@ -146,7 +154,7 @@ export default class Autocomplete extends Component<
       value,
       onChange: (event, nw) => this.onChange(event, nw),
       onKeyPress: ev => this.onKeyPress(ev), // i guess it's onKeyDown ?
-      // THIS IS NOT USED
+      // this will trigger an error
       //onSuggestionSelected: (ev, sugg) => this.onSuggestionSelected(ev, sugg),
       autoComplete: 'off',
       autoFocus,
