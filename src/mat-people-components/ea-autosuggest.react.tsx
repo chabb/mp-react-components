@@ -19,13 +19,14 @@ export default class Autocomplete extends Component<
     super(props);
     // one of those two is not needed
     this.state = { value: '', suggestions: [] };
-    this.setState({ value: '', suggestions: [] });
+
+    // trigger react warning
+    //this.setState({ value: '', suggestions: [] });
   }
 
   // this looks like a variant of derivePropsFromState ( and it should be only called when the component received new props
   // and you can potentially check that the props have not changed before calling it
   // using hooks and a pure functional component would make it easier
-
   // see https://reactjs.org/blog/2018/06/07/you-probably-dont-need-derived-state.html
   // which is actually a bit outdated, hook replaces all those solutions
 
@@ -145,7 +146,8 @@ export default class Autocomplete extends Component<
       value,
       onChange: (event, nw) => this.onChange(event, nw),
       onKeyPress: ev => this.onKeyPress(ev), // i guess it's onKeyDown ?
-      onSuggestionSelected: (ev, sugg) => this.onSuggestionSelected(ev, sugg),
+      // THIS IS NOT USED
+      //onSuggestionSelected: (ev, sugg) => this.onSuggestionSelected(ev, sugg),
       autoComplete: 'off',
       autoFocus,
       style,

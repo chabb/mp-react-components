@@ -15,6 +15,7 @@ import { PeriodicContext } from './periodic-table/periodic-table-state/periodic-
 import { TableLayout } from './periodic-table/periodic-table-component/periodic-table.component';
 import { shperes as scene } from './crystal-toolkit-components/components-v2/scene/simple-scene';
 import Simple3DSceneComponent from './crystal-toolkit-components/components-v2/Simple3DScene/Simple3DSceneComponent.react';
+import Autocomplete from './mat-people-components/ea-autosuggest.react';
 
 const mountNodeSelector = 'app';
 const mountNode = document.getElementById(mountNodeSelector);
@@ -63,36 +64,15 @@ function TestComponent(props: any) {
   const [sel, ss] = useState(2);
 
   return (
-    <div>
-      <div
-        onClick={() => {
-          console.log('CLICKED');
-          ss(1);
-          sz(['Cl', 'Na', 'Be']);
-          sd(['K', 'Be']);
-        }}
-      >
-        CLICK ME
-      </div>
-      <PeriodicContext>
-        <div>
-          <SelectableTable
-            forwardOuterChange={true}
-            maxElementSelectable={sel}
-            hiddenElements={props.e}
-            onStateChange={a => {
-              console.log('new elements', a);
-            }}
-            enabledElements={z}
-            disabledElements={d}
-          />
-          <TableFilter />
-          <SelectedComponent />
-          <div>{props.toString()}</div>
-        </div>
-      </PeriodicContext>
-      )
-    </div>
+    <Autocomplete
+      endpoint={'...'}
+      fields={['original', 'normalized']}
+      sort={['_score']}
+      authPass={'pass'}
+      authUser={'user'}
+      searchField={'original.edgengram'}
+      id={'input'}
+    />
   );
 }
 
