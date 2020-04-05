@@ -9,6 +9,7 @@ import Simple3DSceneComponent from '../crystal-toolkit-components/components-v2/
 import ReactGraphComponent from '../crystal-toolkit-components/components-v2/graph.component';
 import { CameraContextWrapper } from '../crystal-toolkit-components/components-v2/Simple3DScene/camera-context';
 import { ScenePosition } from '../crystal-toolkit-components/components-v2/scene/inset-helper';
+import { SceneSwitcher } from '../index';
 
 const emptyObject = {};
 export const scene3d = () => (
@@ -178,7 +179,7 @@ export const graphVizView = () => (
 );
 
 export default {
-  component: Simple3DSceneComponent,
+  component: SceneSwitcher,
   title: 'Crystal-toolkit',
   decorators: [withKnobs],
   stories: []

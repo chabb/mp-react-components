@@ -32,10 +32,9 @@ export function SceneEditor(props) {
   return (
     <div className="editor-wrapper">
       <div className="editor" style={{ width: 500 }}>
-        {!editedObject ||
-          (!editedObject.threeUUID && (
-            <div style={{ margin: 'auto' }}> Select an object on the screen to edit it</div>
-          ))}
+        {(!editedObject || !editedObject.threeUUID) && (
+          <div style={{ margin: 'auto' }}> Select an object on the screen to edit it</div>
+        )}
 
         {!!editedObject && editedObject.jsonObject && editedObject.jsonObject.length !== 0 ? (
           <SceneFields

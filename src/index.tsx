@@ -31,29 +31,6 @@ const mountNode = document.getElementById(mountNodeSelector);
 
 let elements: any[] = [];
 
-function SelectedComponent() {
-  const { enabledElements } = useElements();
-  // try to delete the key in the store instead
-  const getElementsList = () => Object.keys(enabledElements).filter(el => enabledElements[el]);
-
-  return (
-    <div className="cmp-list" style={{ margin: '10px', display: 'flex' }}>
-      {getElementsList().map((elt: any) => (
-        <StandalonePeriodicComponent
-          key={elt}
-          size={50}
-          disabled={false}
-          enabled={false}
-          hidden={false}
-          element={elt}
-          onElementClicked={() => {}}
-          onElementHovered={() => {}}
-        />
-      ))}
-    </div>
-  );
-}
-
 const vis = { atoms: true };
 
 function SceneSwitcher() {
@@ -88,46 +65,6 @@ function SelectedComponentSimple() {
     </ul>
   );
 }
-
-function TestComponent(props: any) {
-  const [d, sd] = useState(props.d as any);
-  const [z, sz] = useState(props.e as any);
-  const [sel, ss] = useState(2);
-
-  return (
-    <div>
-      <div
-        onClick={() => {
-          console.log('CLICKED');
-          ss(1);
-          sz(['Cl', 'Na', 'Be']);
-          sd(['K', 'Be']);
-        }}
-      >
-        CLICK ME
-      </div>
-      <PeriodicContext>
-        <div>
-          <SelectableTable
-            forwardOuterChange={true}
-            maxElementSelectable={sel}
-            hiddenElements={props.e}
-            onStateChange={a => {
-              console.log('new elements', a);
-            }}
-            enabledElements={z}
-            disabledElements={d}
-          />
-          <TableFilter />
-          <SelectedComponent />
-          <div>{props.toString()}</div>
-        </div>
-      </PeriodicContext>
-      )
-    </div>
-  );
-}
-
 const keys = new Set([...Object.keys(TABLE_DICO_V2)]);
 keys.delete('Pb');
 keys.delete('Na');
